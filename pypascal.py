@@ -1,17 +1,15 @@
-"""PyPascal"""
+"""PyPascal Revision 1"""
 
-import argparse
-import sys
 from enum import Enum
 
-_SHOULD_LOG_SCOPE = False  # see '--scope' command line option
-_SHOULD_LOG_STACK = False  # see '--stack' command line option
+_SHOULD_LOG_SCOPE = True  # see '--scope' command line option
+_SHOULD_LOG_STACK = True  # see '--stack' command line option
 
 
 class ErrorCode(Enum):
-    UNEXPECTED_TOKEN = 'Unexpected token'
-    ID_NOT_FOUND     = 'Identifier not found'
-    DUPLICATE_ID     = 'Duplicate id found'
+    UNEXPECTED_TOKEN = "Unexpected token"
+    ID_NOT_FOUND = "Identifier not found"
+    DUPLICATE_ID = "Duplicate id found"
 
 
 class Error(Exception):
@@ -19,7 +17,7 @@ class Error(Exception):
         self.error_code = error_code
         self.token = token
         # add exception class name before the message
-        self.message = f'{self.__class__.__name__}: {message}'
+        self.message = f"{self.__class__.__name__}: {message}"
 
 
 class LexerError(Error):
@@ -43,34 +41,36 @@ class SemanticError(Error):
 
 class TokenType(Enum):
     # single-character token types
-    PLUS          = '+'
-    MINUS         = '-'
-    MUL           = '*'
-    FLOAT_DIV     = '/'
-    LPAREN        = '('
-    RPAREN        = ')'
-    SEMI          = ';'
-    DOT           = '.'
-    COLON         = ':'
-    COMMA         = ','
+    PLUS = "+"
+    MINUS = "-"
+    MUL = "*"
+    FLOAT_DIV = "/"
+    LPAREN = "("
+    RPAREN = ")"
+    SEMI = ";"
+    DOT = "."
+    COLON = ":"
+    COMMA = ","
     # block of reserved words
-    PROGRAM       = 'PROGRAM'  # marks the beginning of the block
-    INTEGER       = 'INTEGER'
-    REAL          = 'REAL'
-    INTEGER_DIV   = 'DIV'
-    VAR           = 'VAR'
-    PROCEDURE     = 'PROCEDURE'
-    BEGIN         = 'BEGIN'
-    END           = 'END'      # marks the end of the block
+    PROGRAM = "PROGRAM"  # start of code block
+    INTEGER = "INTEGER"
+    REAL = "REAL"
+    INTEGER_DIV = "DIV"
+    VAR = "VAR"
+    PROCEDURE = "PROCEDURE"
+    BEGIN = "BEGIN"
+    END = "END"  # end of code block
     # misc
-    ID            = 'ID'
-    INTEGER_CONST = 'INTEGER_CONST'
-    REAL_CONST    = 'REAL_CONST'
-    ASSIGN        = ':='
-    EOF           = 'EOF'
+    ID = "ID"
+    INTEGER_CONST = "INTEGER_CONST"
+    REAL_CONST = "REAL_CONST"
+    ASSIGN = ":="
+    EOF = "EOF"
 
 
 class Token:
+    """Class representation of Token objects used to parse and create Abstract Syntax Tree."""
+
     def __init__(self, type, value, lineno=None, column=None):
         self.type = type
         self.value = value
@@ -78,18 +78,14 @@ class Token:
         self.column = column
 
     def __str__(self):
-        """String representation of the class instance.
-
-        Example:
-            >>> Token(TokenType.INTEGER, 7, lineno=5, column=10)
-            Token(TokenType.INTEGER, 7, position=5:10)
-        """
-        return 'Token({type}, {value}, position={lineno}:{column})'.format(
-            type=self.type,
-            value=repr(self.value),
-            lineno=self.lineno,
-            column=self.column,
-        )
+        """String representation of the Token class instance."""
+        # return 'Token({type}, {value}, position={lineno}:{column})'.format(
+        #     type=self.type,
+        #     value=repr(self.value),
+        #     lineno=self.lineno,
+        #     column=self.column,
+        # )
+        return f"Token({self.type}, {repr(self.value)}, location = [{self.lineno}, {self.column}])"
 
     def __repr__(self):
         return self.__str__()
@@ -119,7 +115,7 @@ def _build_reserved_keywords():
     end_index = tt_list.index(TokenType.END)
     reserved_keywords = {
         token_type.value: token_type
-        for token_type in tt_list[start_index:end_index + 1]
+        for token_type in tt_list[start_index : end_index + 1]
     }
     return reserved_keywords
 
@@ -129,26 +125,24 @@ RESERVED_KEYWORDS = _build_reserved_keywords()
 
 class Lexer:
     def __init__(self, text):
-        # client string input, e.g. "4 + 2 * 3 - 6 / 2"
         self.text = text
-        # self.pos is an index into self.text
         self.pos = 0
         self.current_char = self.text[self.pos]
-        # token line number and column number
         self.lineno = 1
         self.column = 1
 
     def error(self):
-        s = "Lexer error on '{lexeme}' line: {lineno} column: {column}".format(
-            lexeme=self.current_char,
-            lineno=self.lineno,
-            column=self.column,
-        )
-        raise LexerError(message=s)
+        # msg = "Lexer error on '{lexeme}' line: {lineno} column: {column}".format(
+        #     lexeme=self.current_char,
+        #     lineno=self.lineno,
+        #     column=self.column,
+        # )
+        msg = f"Lexer error on '{self.current_char}' line: {self.lineno} column: {self.column}"
+        raise LexerError(message=msg)
 
     def advance(self):
         """Advance the `pos` pointer and set the `current_char` variable."""
-        if self.current_char == '\n':
+        if self.current_char == "\n":
             self.lineno += 1
             self.column = 0
 
@@ -171,7 +165,7 @@ class Lexer:
             self.advance()
 
     def skip_comment(self):
-        while self.current_char != '}':
+        while self.current_char != "}":
             self.advance()
         self.advance()  # the closing curly brace
 
@@ -181,12 +175,12 @@ class Lexer:
         # Create a new token with current line and column number
         token = Token(type=None, value=None, lineno=self.lineno, column=self.column)
 
-        result = ''
+        result = ""
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
 
-        if self.current_char == '.':
+        if self.current_char == ".":
             result += self.current_char
             self.advance()
 
@@ -208,7 +202,7 @@ class Lexer:
         # Create a new token with current line and column number
         token = Token(type=None, value=None, lineno=self.lineno, column=self.column)
 
-        value = ''
+        value = ""
         while self.current_char is not None and self.current_char.isalnum():
             value += self.current_char
             self.advance()
@@ -235,7 +229,7 @@ class Lexer:
                 self.skip_whitespace()
                 continue
 
-            if self.current_char == '{':
+            if self.current_char == "{":
                 self.advance()
                 self.skip_comment()
                 continue
@@ -246,7 +240,7 @@ class Lexer:
             if self.current_char.isdigit():
                 return self.number()
 
-            if self.current_char == ':' and self.peek() == '=':
+            if self.current_char == ":" and self.peek() == "=":
                 token = Token(
                     type=TokenType.ASSIGN,
                     value=TokenType.ASSIGN.value,  # ':='
@@ -311,6 +305,7 @@ class UnaryOp(AST):
 
 class Compound(AST):
     """Represents a 'BEGIN ... END' block"""
+
     def __init__(self):
         self.children = []
 
@@ -324,6 +319,7 @@ class Assign(AST):
 
 class Var(AST):
     """The Var node is constructed out of ID token."""
+
     def __init__(self, token):
         self.token = token
         self.value = token.value
@@ -392,7 +388,7 @@ class Parser:
         raise ParserError(
             error_code=error_code,
             token=token,
-            message=f'{error_code.value} -> {token}',
+            message=f"{error_code.value} -> {token}",
         )
 
     def eat(self, token_type):
@@ -446,7 +442,7 @@ class Parser:
         return declarations
 
     def formal_parameters(self):
-        """ formal_parameters : ID (COMMA ID)* COLON type_spec """
+        """formal_parameters : ID (COMMA ID)* COLON type_spec"""
         param_nodes = []
 
         param_tokens = [self.current_token]
@@ -466,8 +462,8 @@ class Parser:
         return param_nodes
 
     def formal_parameter_list(self):
-        """ formal_parameter_list : formal_parameters
-                                  | formal_parameters SEMI formal_parameter_list
+        """formal_parameter_list : formal_parameters
+        | formal_parameters SEMI formal_parameter_list
         """
         # procedure Foo();
         if not self.current_token.type == TokenType.ID:
@@ -494,15 +490,12 @@ class Parser:
         self.eat(TokenType.COLON)
 
         type_node = self.type_spec()
-        var_declarations = [
-            VarDecl(var_node, type_node)
-            for var_node in var_nodes
-        ]
+        var_declarations = [VarDecl(var_node, type_node) for var_node in var_nodes]
         return var_declarations
 
     def procedure_declaration(self):
         """procedure_declaration :
-             PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI
+        PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI
         """
         self.eat(TokenType.PROCEDURE)
         proc_name = self.current_token.value
@@ -522,7 +515,7 @@ class Parser:
 
     def type_spec(self):
         """type_spec : INTEGER
-                     | REAL
+        | REAL
         """
         token = self.current_token
         if self.current_token.type == TokenType.INTEGER:
@@ -570,9 +563,7 @@ class Parser:
         """
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
-        elif (self.current_token.type == TokenType.ID and
-              self.lexer.current_char == '('
-        ):
+        elif self.current_token.type == TokenType.ID and self.lexer.current_char == "(":
             node = self.proccall_statement()
         elif self.current_token.type == TokenType.ID:
             node = self.assignment_statement()
@@ -651,9 +642,9 @@ class Parser:
         node = self.factor()
 
         while self.current_token.type in (
-                TokenType.MUL,
-                TokenType.INTEGER_DIV,
-                TokenType.FLOAT_DIV,
+            TokenType.MUL,
+            TokenType.INTEGER_DIV,
+            TokenType.FLOAT_DIV,
         ):
             token = self.current_token
             if token.type == TokenType.MUL:
@@ -669,11 +660,11 @@ class Parser:
 
     def factor(self):
         """factor : PLUS factor
-                  | MINUS factor
-                  | INTEGER_CONST
-                  | REAL_CONST
-                  | LPAREN expr RPAREN
-                  | variable
+        | MINUS factor
+        | INTEGER_CONST
+        | REAL_CONST
+        | LPAREN expr RPAREN
+        | variable
         """
         token = self.current_token
         if token.type == TokenType.PLUS:
@@ -764,14 +755,16 @@ class Parser:
 #                                                                             #
 ###############################################################################
 
+
 class NodeVisitor:
     def visit(self, node):
-        method_name = 'visit_' + type(node).__name__
+        method_name = f"visit_{type(node).__name__}"
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
     def generic_visit(self, node):
-        raise Exception('No visit_{} method'.format(type(node).__name__))
+        # raise Exception("No visit_{} method".format(type(node).__name__))
+        raise Exception(f"No visit_{type(node).__name__} method")
 
 
 ###############################################################################
@@ -779,6 +772,7 @@ class NodeVisitor:
 #  SYMBOLS, TABLES, SEMANTIC ANALYSIS                                         #
 #                                                                             #
 ###############################################################################
+
 
 class Symbol:
     def __init__(self, name, type=None):
@@ -791,13 +785,13 @@ class VarSymbol(Symbol):
         super().__init__(name, type)
 
     def __str__(self):
-        return "<{class_name}(name='{name}', type='{type}')>".format(
-            class_name=self.__class__.__name__,
-            name=self.name,
-            type=self.type,
-        )
-
-    __repr__ = __str__
+        # return "<{class_name}(name='{name}', type='{type}')>".format(
+        #     class_name=self.__class__.__name__,
+        #     name=self.name,
+        #     type=self.type,
+        # )
+        class_name = self.__class__.__name__
+        return f"<{class_name} (name='{self.name}', type='{self.type}')>"
 
 
 class BuiltinTypeSymbol(Symbol):
@@ -808,10 +802,12 @@ class BuiltinTypeSymbol(Symbol):
         return self.name
 
     def __repr__(self):
-        return "<{class_name}(name='{name}')>".format(
-            class_name=self.__class__.__name__,
-            name=self.name,
-        )
+        # return "<{class_name}(name='{name}')>".format(
+        #     class_name=self.__class__.__name__,
+        #     name=self.name,
+        # )
+        class_name = self.__class__.__name__
+        return f"<{class_name} (name='{self.name}')>"
 
 
 class ProcedureSymbol(Symbol):
@@ -823,13 +819,13 @@ class ProcedureSymbol(Symbol):
         self.block_ast = None
 
     def __str__(self):
-        return '<{class_name}(name={name}, parameters={params})>'.format(
-            class_name=self.__class__.__name__,
-            name=self.name,
-            params=self.formal_params,
-        )
-
-    __repr__ = __str__
+        # return "<{class_name}(name={name}, parameters={params})>".format(
+        #     class_name=self.__class__.__name__,
+        #     name=self.name,
+        #     params=self.formal_params,
+        # )
+        class_name = self.__class__.__name__
+        return f"<{class_name} (name={self.name}, parameters={self.formal_params})>"
 
 
 class ScopedSymbolTable:
@@ -840,42 +836,38 @@ class ScopedSymbolTable:
         self.enclosing_scope = enclosing_scope
 
     def _init_builtins(self):
-        self.insert(BuiltinTypeSymbol('INTEGER'))
-        self.insert(BuiltinTypeSymbol('REAL'))
+        self.insert(BuiltinTypeSymbol("INTEGER"))
+        self.insert(BuiltinTypeSymbol("REAL"))
 
     def __str__(self):
-        h1 = 'SCOPE (SCOPED SYMBOL TABLE)'
-        lines = ['\n', h1, '=' * len(h1)]
+        h1 = "SCOPE (SCOPED SYMBOL TABLE)"
+        lines = ["\n", h1, "=" * len(h1)]
         for header_name, header_value in (
-            ('Scope name', self.scope_name),
-            ('Scope level', self.scope_level),
-            ('Enclosing scope',
-             self.enclosing_scope.scope_name if self.enclosing_scope else None
-            )
+            ("Scope name", self.scope_name),
+            ("Scope level", self.scope_level),
+            (
+                "Enclosing scope",
+                self.enclosing_scope.scope_name if self.enclosing_scope else None,
+            ),
         ):
-            lines.append('%-15s: %s' % (header_name, header_value))
-        h2 = 'Scope (Scoped symbol table) contents'
-        lines.extend([h2, '-' * len(h2)])
-        lines.extend(
-            ('%7s: %r' % (key, value))
-            for key, value in self._symbols.items()
-        )
-        lines.append('\n')
-        s = '\n'.join(lines)
+            lines.append("%-15s: %s" % (header_name, header_value))
+        h2 = "Scope (Scoped symbol table) contents"
+        lines.extend([h2, "-" * len(h2)])
+        lines.extend(("%7s: %r" % (key, value)) for key, value in self._symbols.items())
+        lines.append("\n")
+        s = "\n".join(lines)
         return s
-
-    __repr__ = __str__
 
     def log(self, msg):
         if _SHOULD_LOG_SCOPE:
             print(msg)
 
     def insert(self, symbol):
-        self.log(f'Insert: {symbol.name}')
+        self.log(f"Insert: {symbol.name}")
         self._symbols[symbol.name] = symbol
 
     def lookup(self, name, current_scope_only=False):
-        self.log(f'Lookup: {name}. (Scope name: {self.scope_name})')
+        self.log(f"Lookup: {name}. (Scope name: {self.scope_name})")
         # 'symbol' is either an instance of the Symbol class or None
         symbol = self._symbols.get(name)
 
@@ -902,7 +894,7 @@ class SemanticAnalyzer(NodeVisitor):
         raise SemanticError(
             error_code=error_code,
             token=token,
-            message=f'{error_code.value} -> {token}',
+            message=f"{error_code.value} -> {token}",
         )
 
     def visit_Block(self, node):
@@ -911,9 +903,9 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.compound_statement)
 
     def visit_Program(self, node):
-        self.log('ENTER scope: global')
+        self.log("ENTER scope: global")
         global_scope = ScopedSymbolTable(
-            scope_name='global',
+            scope_name="global",
             scope_level=1,
             enclosing_scope=self.current_scope,  # None
         )
@@ -926,7 +918,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.log(global_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
-        self.log('LEAVE scope: global')
+        self.log("LEAVE scope: global")
 
     def visit_Compound(self, node):
         for child in node.children:
@@ -944,12 +936,12 @@ class SemanticAnalyzer(NodeVisitor):
         proc_symbol = ProcedureSymbol(proc_name)
         self.current_scope.insert(proc_symbol)
 
-        self.log(f'ENTER scope: {proc_name}')
+        self.log(f"ENTER scope: {proc_name}")
         # Scope for parameters and local variables
         procedure_scope = ScopedSymbolTable(
             scope_name=proc_name,
             scope_level=self.current_scope.scope_level + 1,
-            enclosing_scope=self.current_scope
+            enclosing_scope=self.current_scope,
         )
         self.current_scope = procedure_scope
 
@@ -966,7 +958,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.log(procedure_scope)
 
         self.current_scope = self.current_scope.enclosing_scope
-        self.log(f'LEAVE scope: {proc_name}')
+        self.log(f"LEAVE scope: {proc_name}")
 
         # accessed by the interpreter when executing procedure call
         proc_symbol.block_ast = node.block_node
@@ -1025,8 +1017,8 @@ class SemanticAnalyzer(NodeVisitor):
 
 
 class ARType(Enum):
-    PROGRAM   = 'PROGRAM'
-    PROCEDURE = 'PROCEDURE'
+    PROGRAM = "PROGRAM"
+    PROCEDURE = "PROCEDURE"
 
 
 class CallStack:
@@ -1043,8 +1035,8 @@ class CallStack:
         return self._records[-1]
 
     def __str__(self):
-        s = '\n'.join(repr(ar) for ar in reversed(self._records))
-        s = f'CALL STACK\n{s}\n\n'
+        s = "\n".join(repr(ar) for ar in reversed(self._records))
+        s = f"CALL STACK\n{s}\n\n"
         return s
 
     def __repr__(self):
@@ -1068,17 +1060,11 @@ class ActivationRecord:
         return self.members.get(key)
 
     def __str__(self):
-        lines = [
-            '{level}: {type} {name}'.format(
-                level=self.nesting_level,
-                type=self.type.value,
-                name=self.name,
-            )
-        ]
+        lines = [f"{self.nesting_level}: {self.type.value} {self.name}"]
         for name, val in self.members.items():
-            lines.append(f'   {name:<20}: {val}')
+            lines.append(f"   {name:<20}: {val}")
 
-        s = '\n'.join(lines)
+        s = "\n".join(lines)
         return s
 
     def __repr__(self):
@@ -1096,7 +1082,7 @@ class Interpreter(NodeVisitor):
 
     def visit_Program(self, node):
         program_name = node.name
-        self.log(f'ENTER: PROGRAM {program_name}')
+        self.log(f"ENTER: PROGRAM {program_name}")
 
         ar = ActivationRecord(
             name=program_name,
@@ -1109,7 +1095,7 @@ class Interpreter(NodeVisitor):
 
         self.visit(node.block)
 
-        self.log(f'LEAVE: PROGRAM {program_name}')
+        self.log(f"LEAVE: PROGRAM {program_name}")
         self.log(str(self.call_stack))
 
         self.call_stack.pop()
@@ -1193,13 +1179,13 @@ class Interpreter(NodeVisitor):
 
         self.call_stack.push(ar)
 
-        self.log(f'ENTER: PROCEDURE {proc_name}')
+        self.log(f"ENTER: PROCEDURE {proc_name}")
         self.log(str(self.call_stack))
 
         # evaluate procedure body
         self.visit(proc_symbol.block_ast)
 
-        self.log(f'LEAVE: PROCEDURE {proc_name}')
+        self.log(f"LEAVE: PROCEDURE {proc_name}")
         self.log(str(self.call_stack))
 
         self.call_stack.pop()
@@ -1207,50 +1193,5 @@ class Interpreter(NodeVisitor):
     def interpret(self):
         tree = self.tree
         if tree is None:
-            return ''
+            return ""
         return self.visit(tree)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description='SPI - Simple Pascal Interpreter'
-    )
-    parser.add_argument('inputfile', help='Pascal source file')
-    parser.add_argument(
-        '--scope',
-        help='Print scope information',
-        action='store_true',
-    )
-    parser.add_argument(
-        '--stack',
-        help='Print call stack',
-        action='store_true',
-    )
-    args = parser.parse_args()
-
-    global _SHOULD_LOG_SCOPE, _SHOULD_LOG_STACK
-    _SHOULD_LOG_SCOPE, _SHOULD_LOG_STACK = args.scope, args.stack
-
-    text = open(args.inputfile, 'r').read()
-
-    lexer = Lexer(text)
-    try:
-        parser = Parser(lexer)
-        tree = parser.parse()
-    except (LexerError, ParserError) as e:
-        print(e.message)
-        sys.exit(1)
-
-    semantic_analyzer = SemanticAnalyzer()
-    try:
-        semantic_analyzer.visit(tree)
-    except SemanticError as e:
-        print(e.message)
-        sys.exit(1)
-
-    interpreter = Interpreter(tree)
-    interpreter.interpret()
-
-
-if __name__ == '__main__':
-    main()

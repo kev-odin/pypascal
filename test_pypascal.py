@@ -3,13 +3,13 @@ import unittest
 
 class LexerTestCase(unittest.TestCase):
     def makeLexer(self, text):
-        from pypascal import Lexer
+        from lexer import Lexer
 
         lexer = Lexer(text)
         return lexer
 
     def test_tokens(self):
-        from pypascal import (
+        from lexer import (
             INTEGER_CONST,
             REAL_CONST,
             MUL,
@@ -55,7 +55,7 @@ class LexerTestCase(unittest.TestCase):
 
 class InterpreterTestCase(unittest.TestCase):
     def makeInterpreter(self, text):
-        from pypascal import Lexer, Parser, SymbolTableBuilder, Interpreter
+        from lexer import Lexer, Parser, SymbolTableBuilder, Interpreter
 
         lexer = Lexer(text)
         parser = Parser(lexer)

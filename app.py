@@ -1,5 +1,5 @@
 import argparse, sys
-from pypascal import (
+from lexer import (
     Lexer,
     Parser,
     Interpreter,

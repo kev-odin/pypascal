@@ -1,9 +1,15 @@
-
 ###############################################################################
 #                                                                             #
 #  INTERPRETER                                                                #
 #                                                                             #
 ###############################################################################
+
+from enum import Enum
+from lexer import TokenType
+from parser import NodeVisitor
+
+
+_SHOULD_LOG_STACK = True  # see '--stack' command line option
 
 
 class ARType(Enum):

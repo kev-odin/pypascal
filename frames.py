@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+from errors import ErrorCode, SemanticError
+from parser import NodeVisitor
+
+
+_SHOULD_LOG_SCOPE = True  # see '--scope' command line option
+
 
 class Symbol:
     def __init__(self, name, type=None):
@@ -16,11 +22,6 @@ class VarSymbol(Symbol):
         super().__init__(name, type)
 
     def __str__(self):
-        # return "<{class_name}(name='{name}', type='{type}')>".format(
-        #     class_name=self.__class__.__name__,
-        #     name=self.name,
-        #     type=self.type,
-        # )
         class_name = self.__class__.__name__
         return f"<{class_name} (name='{self.name}', type='{self.type}')>"
 
@@ -33,10 +34,6 @@ class BuiltinTypeSymbol(Symbol):
         return self.name
 
     def __repr__(self):
-        # return "<{class_name}(name='{name}')>".format(
-        #     class_name=self.__class__.__name__,
-        #     name=self.name,
-        # )
         class_name = self.__class__.__name__
         return f"<{class_name} (name='{self.name}')>"
 
@@ -50,11 +47,6 @@ class ProcedureSymbol(Symbol):
         self.block_ast = None
 
     def __str__(self):
-        # return "<{class_name}(name={name}, parameters={params})>".format(
-        #     class_name=self.__class__.__name__,
-        #     name=self.name,
-        #     params=self.formal_params,
-        # )
         class_name = self.__class__.__name__
         return f"<{class_name} (name={self.name}, parameters={self.formal_params})>"
 
@@ -238,4 +230,3 @@ class SemanticAnalyzer(NodeVisitor):
         proc_symbol = self.current_scope.lookup(node.proc_name)
         # accessed by the interpreter when executing procedure call
         node.proc_symbol = proc_symbol
-

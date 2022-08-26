@@ -2,9 +2,6 @@
 
 from enum import Enum
 
-_SHOULD_LOG_SCOPE = True  # see '--scope' command line option
-_SHOULD_LOG_STACK = True  # see '--stack' command line option
-
 
 class ErrorCode(Enum):
     UNEXPECTED_TOKEN = "Unexpected token"
@@ -273,4 +270,3 @@ class Lexer:
         # EOF (end-of-file) token indicates that there is no more
         # input left for lexical analysis
         return Token(type=TokenType.EOF, value=None)
-
